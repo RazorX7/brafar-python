@@ -44,9 +44,11 @@ def is_jump(st):
 
 
 def is_st_comment(st):
-    if isinstance(st, ast.Expr) and isinstance(st.value, ast.Constant) and isinstance(st.value.value, str):
-        if st.value.value.startswith("'") or st.value.value.startswith("#"):
+    if isinstance(st, ast.Expr) and isinstance(st.value, ast.Constant):
+        if isinstance(st.value.value, str):
             return True
+            # if st.value.value.startswith("'") or st.value.value.startswith("#"):
+            #     return True
     return False
 
 
@@ -421,14 +423,16 @@ class BlockBuilder(ast.NodeVisitor):
                 pre_block = new_block
                 p_block.add_children(new_block)
                 if is_jump(st) != -1:
-                    new_block.set_jump_block(JumpNode(is_jump(st), st))
+                    if new_block.get_jump_block() is None:
+                        new_block.set_jump_block(JumpNode(is_jump(st), st))
                 elif block_type == -1:
                     if not is_st_comment(st):
                         new_block.add_ast_node(st)
                 self.__meta_blocks.append(new_block)
             else:
                 if is_jump(st) != -1:
-                    pre_block.set_jump_block(JumpNode(is_jump(st), st))
+                    if pre_block.get_jump_block() is None:
+                        pre_block.set_jump_block(JumpNode(is_jump(st), st))
                 elif block_type == -1:
                     if not is_st_comment(st):
                         pre_block.add_ast_node(st)

@@ -10,7 +10,7 @@
 <             return i
 ---
 > def search(x, seq):
->     if seq == () or seq == []:
+>     if not seq:
 >         return 0
 >     for i, element in enumerate(seq):
 >         for element in seq:

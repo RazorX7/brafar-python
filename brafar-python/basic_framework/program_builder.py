@@ -58,8 +58,9 @@ class Reconstructor(ast.NodeVisitor):
 
     def visit_Module(self, node: Module):
         for i in range(len(node.body)):
-            if isinstance(node.body[i], ast.FunctionDef):
-                if node.body[i].name == self.__m_node.name:
+            cur_node = node.body[i]
+            if isinstance(cur_node, ast.FunctionDef):
+                if cur_node.name == self.__m_node.name:
                     node.body[i] = self.__m_node
         return node
 
@@ -131,6 +132,15 @@ def get_programs(files):
         if p is not None:
             programs.append(p)
     return programs
+
+
+def get_programs_map(files):
+    programs_map = {}
+    for file in files:
+        p = get_program(file)
+        if p is not None:
+            programs_map[file] = p
+    return programs_map
 
 
 if __name__ == '__main__':

@@ -15,16 +15,25 @@ The package is currently supported/tested on the following operating systems:
 ### Install Python packages
 The package is currently supported/tested on the following Python versions:
 * python3
-```
+```shell
 sudo apt-get install python3 python3-pip
 ```
 * zss
-```
+```shell
 pip3 install zss
 ```
 * timeout_decorator
-```
+```shell
 pip3 install timeout_decorator
+```
+
+* fastcache
+```shell
+pip3 install fastcache
+```
+* numpy
+```shell
+pip3 install numpy
 ```
 ### Docker environment
 

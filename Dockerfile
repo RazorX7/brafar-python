@@ -15,10 +15,17 @@
 #RUN mkdir /home/linna/brafar-python
 #COPY brafar-python /home/linna/brafar-python
 ##RUN git clone https://github.com/githubhuyang/refactory.git
-
+FROM ubuntu
 FROM faucet/python3
+FROM ubuntu:latest
+
+RUN apt-get update && apt-get install -y python3 python3-pip
+
 WORKDIR /home/linna
 RUN mkdir /home/linna/brafar-python
 RUN pip install zss
 RUN pip install timeout_decorator
+RUN pip install fastcache
+RUN pip install numpy
 COPY brafar-python /home/linna/brafar-python
+CMD /bin/bash

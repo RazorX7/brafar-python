@@ -7,6 +7,8 @@ from bidirectional_refactoring.cs_node import CSNode, CSType
 from basic_framework.block_builder import BlockBuilder, BlockNode, BlockType
 from zss.simple_tree import Node
 
+from bidirectional_refactoring.refactoring import InitialRefactor
+
 
 class MethodBuilder(ast.NodeVisitor):
     def __init__(self, m_node, p_program):
@@ -28,9 +30,17 @@ class MethodBuilder(ast.NodeVisitor):
         self.variable_builder = None
         self.meta_block_nodes = None
         self.contains_inner_func = False
+        self.recursive = False
+        InitialRefactor(self.m_node)
+
+    def is_recursive(self):
+        return self.recursive
 
     def is_containing_inner_func(self):
         return self.contains_inner_func
+
+    def get_method_code(self):
+        return self.method_code
 
     def init_(self):
         self.visit(self.m_node)
@@ -41,6 +51,7 @@ class MethodBuilder(ast.NodeVisitor):
         self.block_builder: BlockBuilder
         self.variable_builder = None
         self.meta_block_nodes = None
+        self.call_funcs.sort()
         # print(self.cfs)
 
     def get_m_node(self):
@@ -140,8 +151,12 @@ class MethodBuilder(ast.NodeVisitor):
     def visit_Call(self, node: Call) -> Any:
         if isinstance(node.func, ast.Name):
             func_name = node.func.id
-            if func_name in self.b_funcs and func_name != self.m_name:
-                self.call_funcs.append(func_name)
+            if func_name in self.b_funcs and not self.call_funcs.__contains__(func_name):
+                if func_name == self.m_name:
+                    self.recursive = True
+                else:
+                    self.call_funcs.append(func_name)
+        self.generic_visit(node)
 
     def get_call_funcs(self):
         return self.call_funcs

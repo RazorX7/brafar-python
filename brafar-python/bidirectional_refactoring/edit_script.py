@@ -1,4 +1,5 @@
 import ast
+import time
 from enum import Enum
 from bidirectional_refactoring.mapping import Mapping
 from bidirectional_refactoring.cs_node import CSNode, CSType
@@ -175,6 +176,7 @@ def init_cs_node(m_node):
 
 class EditScript:
     def __init__(self, m_node1, m_node2):
+        s_time = time.time()
         self.actions = []
         self.flag = True
         self.__m_node1 = m_node1
@@ -189,6 +191,19 @@ class EditScript:
         self.guidance = []
         self.check_best_match()
         self.refactory_guide()
+        self.__refactored_code1 = ast.unparse(self.__m_node1)
+        self.__refactored_code2 = ast.unparse(self.__m_node2)
+        e_time = time.time()
+        self.br_time = float("%.4f" % (e_time - s_time))
+
+    def get_br_time(self):
+        return self.br_time
+
+    def get_refactored_code1(self):
+        return self.__refactored_code1
+
+    def get_refactored_code2(self):
+        return self.__refactored_code2
 
     def check_best_match(self):
         _if_nodes = []

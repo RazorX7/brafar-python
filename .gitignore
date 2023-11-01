@@ -4,3 +4,5 @@ education-python-benchmark
 .DS_Store
 __pycache__
 log.txt
+output/
+repaired_code.py

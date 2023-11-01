@@ -63,14 +63,19 @@ class TestResult:
 
     def validate(self, code):
         for i in range(len(self.__input_path_folders)):
-            if not run_tc(code, self.__input_path_folders[i], self.__output_path_folders[i], self.__global_path):
-                # print(c_refactored_code)
+            try:
+                if not run_tc(code, self.__input_path_folders[i], self.__output_path_folders[i], self.__global_path):
+                    # print(c_refactored_code)
+                    self.__failed_input_path_folders.append(self.__input_path_folders[i])
+                    self.__failed_output_path_folders.append(self.__output_path_folders[i])
+                    self.__test_result = False
+                else:
+                    self.__passed_input_path_folders.append(self.__input_path_folders[i])
+                    self.__passed_output_path_folders.append(self.__output_path_folders[i])
+            except Exception as e:
                 self.__failed_input_path_folders.append(self.__input_path_folders[i])
                 self.__failed_output_path_folders.append(self.__output_path_folders[i])
                 self.__test_result = False
-            else:
-                self.__passed_input_path_folders.append(self.__input_path_folders[i])
-                self.__passed_output_path_folders.append(self.__output_path_folders[i])
 
 
 # class TestThread(threading.Thread):
@@ -163,7 +168,10 @@ class StackBuffer:
         return self.__test_trace[t_index]
 
     def get_last_test_trace(self):
-        return self.__test_trace[self.__end_in - 1]
+        if self.__end_in - 1 >= 0:
+            return self.__test_trace[self.__end_in - 1]
+        else:
+            return -1
 
 
 class Result:
@@ -171,6 +179,13 @@ class Result:
         self.__need_recall = need_recall
         self.__is_fault = is_fault
         self.__need_block_by_block_repair = False
+        self.__need_repair_all = False
+
+    def set_need_repair_all(self):
+        self.__need_repair_all = True
+
+    def get_need_repair_all(self):
+        return self.__need_repair_all
 
     def set_need_recall(self, need_recall):
         self.__need_recall = need_recall
@@ -194,6 +209,8 @@ class Result:
 def get_children_values(block_nodes, children_blocks, stack_buffer: StackBuffer):
     block_values = []
     last_trace_block_index = stack_buffer.get_last_test_trace()
+    # if last_trace_block_index < 0:
+    #     print("sadad")
     for child in children_blocks:
         if child.get_type() == BlockType.BASIC_BLOCK:
             meta_index = child.get_meta_index()
@@ -265,52 +282,53 @@ class FaultLocator:
         # print(target_code)
         # test_thread = TestThread(0.1, target_code, self.__failed_test_case_input, self.__failed_test_case_output)
         sys.stdout = open("log.txt", "w")
-        run_tc(target_code, self.__failed_test_case_input, self.__failed_test_case_output, self.__global_path)
-        sys.stdout = sys.__stdout__
-        # test_thread.start()
-        # test_thread.join()
-        time.sleep(0.2)
-        meta_blocks = target_m.get_meta_block_nodes()
-        block_b: BlockBuilder = target_m.get_block_builder()
-        with open("log.txt") as log_f:
-            line = log_f.readline()
-            while line:
-                if line.startswith("block"):
-                    line = line.replace("\n", "")
-                    index = re.findall(r"block\d+", line)
-                    index = re.findall(r"\d+", index[0])
-                    cur_block: BlockNode = meta_blocks[int(index[0])]
-                    values = line[line.find(" ") + 1:]
-                    # values = json.dumps(eval(values))
-                    # data = json.loads(values)
-                    try:
-                        data = eval(values)
-                    except:
-                        break
-                    finally:
-                        if len(test_trace_log) % 2 == 0:
-                            test_trace.append(int(index[0]))
-                        test_trace_log.append(data)
-
-                        # if cur_block.get_inValues() is not None:
-                        #     if cur_block.get_outValues() is None or len(cur_block.get_inValues()) > len(
-                        #             cur_block.get_outValues()):
-                        #         cur_block.add_outValue(data)
-                        #     else:
-                        #         cur_block.add_inValue(data)
-                        #         block_b.add_test_trace(int(index[0]))
-                        #         test_trace.append(int(index[0]))
-                        # else:
-                        #     cur_block.add_inValue(data)
-                        #     block_b.add_test_trace(int(index[0]))
-                        #     test_trace.append(int(index[0]))
+        try:
+            run_tc(target_code, self.__failed_test_case_input, self.__failed_test_case_output, self.__global_path)
+        finally:
+            sys.stdout = sys.__stdout__
+            # test_thread.start()
+            # test_thread.join()
+            time.sleep(0.2)
+            meta_blocks = target_m.get_meta_block_nodes()
+            block_b: BlockBuilder = target_m.get_block_builder()
+            with open("log.txt") as log_f:
                 line = log_f.readline()
+                while line:
+                    if line.startswith("block"):
+                        line = line.replace("\n", "")
+                        index = re.findall(r"block\d+", line)
+                        index = re.findall(r"\d+", index[0])
+                        cur_block: BlockNode = meta_blocks[int(index[0])]
+                        values = line[line.find(" ") + 1:]
+                        # values = json.dumps(eval(values))
+                        # data = json.loads(values)
+                        try:
+                            data = eval(values)
+                            if len(test_trace_log) % 2 == 0:
+                                test_trace.append(int(index[0]))
+                            test_trace_log.append(data)
+                        except:
+                            return int(index[0]), False
+                            # if cur_block.get_inValues() is not None:
+                            #     if cur_block.get_outValues() is None or len(cur_block.get_inValues()) > len(
+                            #             cur_block.get_outValues()):
+                            #         cur_block.add_outValue(data)
+                            #     else:
+                            #         cur_block.add_inValue(data)
+                            #         block_b.add_test_trace(int(index[0]))
+                            #         test_trace.append(int(index[0]))
+                            # else:
+                            #     cur_block.add_inValue(data)
+                            #     block_b.add_test_trace(int(index[0]))
+                            #     test_trace.append(int(index[0]))
+                    line = log_f.readline()
+            return -1, True
         # block_b.init_specification()
 
     def fault_localization(self):
         self.construct_specification(self.__buggy_m, self.__buggy_variable_trace_code, self.__buggy_block_trace,
                                      self.__buggy_block_trace_log)
-        self.construct_specification(self.__correct_m, self.__correct_variable_trace_code, self.__correct_block_trace,
+        index, c_c = self.construct_specification(self.__correct_m, self.__correct_variable_trace_code, self.__correct_block_trace,
                                      self.__correct_block_trace_log)
         buggy_stack = StackBuffer(0, len(self.__buggy_block_trace), self.__buggy_block_trace,
                                   self.__buggy_block_trace_log)
@@ -318,6 +336,9 @@ class FaultLocator:
                                     self.__correct_block_trace_log)
         self.fault_localization_body(self.__buggy_m.get_block_builder().get_root_block(),
                                      self.__correct_m.get_block_builder().get_root_block(), buggy_stack, correct_stack)
+        if not c_c:
+            if self.__fault_block.get_meta_index() == index:
+                self.get_test_result().set_need_repair_all()
 
     def fault_localization_body(self, buggy_body, correct_body, buggy_stack: StackBuffer, correct_stack: StackBuffer):
         buggy_children_block_values = get_children_values(self.__buggy_m.get_meta_block_nodes(),
@@ -612,6 +633,9 @@ class FaultLocator:
             test_result.set_is_fault(True)
         if cur_block_node.get_jump_block() is not None and related_correct_block_node.get_jump_block() is None:
             test_result.set_is_fault(True)
-        if cur_block_node.get_jump_block() is not None:
-            test_result.set_is_fault(True)
+        if cur_block_node.get_jump_block() is not None and related_correct_block_node.get_jump_block() is not None:
+            if cur_block_node.get_jump_block().get_type() != related_correct_block_node.get_jump_block().get_type():
+                test_result.set_is_fault(True)
+            if cur_block_node.get_jump_block().get_type() == BlockType.RETURN:
+                test_result.set_is_fault(True)
         return test_result
